@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel Admin — Capacitaciones SBP</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --rojo: #EC111A;
+      --rojo-oscuro: #b80d13;
+      --negro: #1a1a1a;
+      --gris: #6b7280;
+      --gris-claro: #f4f4f5;
+      --borde: #e4e4e7;
+      --blanco: #ffffff;
+      --verde: #10b981;
+      --amarillo: #f59e0b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #f9fafb;
+      color: var(--negro);
+      min-height: 100vh;
+    }
+
+    /* LOGIN */
+    .login-screen {
+      position: fixed; inset: 0;
+      background: var(--negro);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .login-box {
+      background: var(--blanco);
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+
+    .login-box .banda {
+      width: 40px;
+      height: 5px;
+      background: var(--rojo);
+      border-radius: 3px;
+      margin: 0 auto 20px;
+    }
+
+    .login-box h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.4rem;
+      margin-bottom: 6px;
+    }
+
+    .login-box p {
+      color: var(--gris);
+      font-size: 0.85rem;
+      margin-bottom: 24px;
+    }
+
+    .login-box input {
+      width: 100%;
+      border: 1.5px solid var(--borde);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      margin-bottom: 12px;
+    }
+
+    .login-box input:focus { border-color: var(--rojo); }
+
+    .login-box button {
+      width: 100%;
+      background: var(--rojo);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .login-error {
+      color: var(--rojo);
+      font-size: 0.8rem;
+      margin-top: 8px;
+      display: none;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--negro);
+      color: white;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-banda { width: 5px; height: 32px; background: var(--rojo); border-radius: 3px; }
+
+    .logo-texto {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.2rem;
+    }
+
+    .logo-texto span { color: var(--rojo); }
+
+    .header-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.7);
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* LAYOUT */
+    .container {
+      max-width: 1000px;
+      margin: 32px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* PANEL CREAR SLOT */
+    .card {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--gris);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 5px;
+    }
+
+    input[type="date"],
+    input[type="time"],
+    input[type="number"] {
+      width: 100%;
+      border: 1.5px solid var(--borde);
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border 0.15s;
+    }
+
+    input:focus { border-color: var(--rojo); }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--rojo);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 11px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover { background: var(--rojo-oscuro); }
+
+    /* SLOTS LIST */
+    .slots-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .slot-item {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .slot-item.bloqueado {
+      opacity: 0.6;
+      border-style: dashed;
+    }
+
+    .slot-fecha-hora {
+      flex: 1;
+    }
+
+    .slot-fecha {
+      font-size: 0.78rem;
+      color: var(--gris);
+      text-transform: capitalize;
+    }
+
+    .slot-hora-txt {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--negro);
+    }
+
+    .badge-cupos {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    .badge-cupos.lleno { background: #fee2e2; color: var(--rojo); }
+    .badge-cupos.disponible { background: #d1fae5; color: var(--verde); }
+    .badge-cupos.bloqueado-badge { background: #fef3c7; color: var(--amarillo); }
+
+    .slot-acciones {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-accion {
+      border: 1px solid var(--borde);
+      background: var(--gris-claro);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .btn-accion:hover { border-color: var(--rojo); color: var(--rojo); background: #fff7f7; }
+
+    .btn-accion.danger:hover { background: #fee2e2; }
+
+    /* RESERVAS MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .modal-overlay.visible { display: flex; }
+
+    .modal {
+      background: var(--blanco);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      color: var(--gris);
+    }
+
+    .reserva-item {
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+    }
+
+    .reserva-nombre { font-weight: 600; margin-bottom: 2px; }
+    .reserva-datos { color: var(--gris); font-size: 0.8rem; }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: var(--gris);
+      font-size: 0.88rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      background: var(--gris-claro);
+      border-radius: 10px;
+      padding: 4px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      background: none;
+      border-radius: 7px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--gris);
+      transition: all 0.15s;
+    }
+
+    .tab.active {
+      background: var(--blanco);
+      color: var(--negro);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    @media (max-width: 700px) {
+      .container { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="banda"></div>
+    <h2>Panel de Administración</h2>
+    <p>Ingresa la contraseña para continuar</p>
+    <input type="password" id="inp-password" placeholder="Contraseña" />
+    <div class="login-error" id="login-error">Contraseña incorrecta</div>
+    <button onclick="verificarPassword()">Ingresar</button>
+  </div>
+</div>
+
+<!-- MODAL RESERVAS -->
+<div class="modal-overlay" id="modal-reservas">
+  <div class="modal">
+    <h3>
+      <span id="modal-titulo">Reservas</span>
+      <button class="modal-close" onclick="cerrarModal()">✕</button>
+    </h3>
+    <div id="modal-lista"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo-banda"></div>
+  <div class="logo-texto">Scotia<span>bank</span> Admin</div>
+  <div class="header-badge">Panel de Capacitaciones</div>
+</header>
+
+<div class="container">
+
+  <!-- PANEL IZQUIERDO: CREAR SLOT -->
+  <div>
+    <div class="card">
+      <h3>➕ Crear nuevo horario</h3>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('individual')">Individual</button>
+        <button class="tab" onclick="switchTab('multiple')">Múltiple</button>
+      </div>
+
+      <!-- Individual -->
+      <div class="tab-content active" id="tab-individual">
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="inp-fecha" />
+        </div>
+        <div class="form-group">
+          <label>Hora</label>
+          <input type="time" id="inp-hora" />
+        </div>
+        <div class="form-group">
+          <label>Cupos disponibles</label>
+          <input type="number" id="inp-cupos" value="6" min="1" max="20" />
+        </div>
+        <button class="btn-primary" onclick="crearSlot()">Crear horario</button>
+      </div>
+
+      <!-- Múltiple: rango de días -->
+      <div class="tab-content" id="tab-multiple">
+        <div class="form-group">
+          <label>Desde</label>
+          <input type="date" id="inp-desde" />
+        </div>
+        <div class="form-group">
+          <label>Hasta</label>
+          <input type="date" id="inp-hasta" />
+        </div>
+        <div class="form-group">
+          <label>Hora</label>
+          <input type="time" id="inp-hora-multi" />
+        </div>
+        <div class="form-group">
+          <label>Cupos por sesión</label>
+          <input type="number" id="inp-cupos-multi" value="6" min="1" max="20" />
+        </div>
+        <button class="btn-primary" onclick="crearSlotsRango()">Crear horarios (L-V)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL DERECHO: LISTA DE SLOTS -->
+  <div>
+    <div class="card">
+      <h3 style="justify-content:space-between">
+        📅 Horarios creados
+        <button class="btn-accion" onclick="cargarSlots()">↻ Actualizar</button>
+      </h3>
+      <div class="slots-list" id="slots-list">
+        <div class="empty-state">Cargando horarios...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://evqznmyvhhtzmmvtoytm.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_F7ZbldPprrVRH0wdBT20HA_pzCZ3Cgt';
+  const ADMIN_PASSWORD = 'Scotia2025'; // CAMBIA ESTA CONTRASEÑA
+
+  const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const DIAS_NOMBRE = ['dom','lun','mar','mié','jue','vie','sáb'];
+
+  function verificarPassword() {
+    const val = document.getElementById('inp-password').value;
+    if (val === ADMIN_PASSWORD) {
+      document.getElementById('login-screen').style.display = 'none';
+      cargarSlots();
+    } else {
+      document.getElementById('login-error').style.display = 'block';
+    }
+  }
+
+  document.getElementById('inp-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') verificarPassword();
+  });
+
+  const api = (path, opts = {}) =>
+    fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+        ...opts.headers
+      },
+      ...opts
+    }).then(r => r.json());
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'individual') || (i === 1 && tab === 'multiple'));
+    });
+    document.getElementById('tab-individual').classList.toggle('active', tab === 'individual');
+    document.getElementById('tab-multiple').classList.toggle('active', tab === 'multiple');
+  }
+
+  async function crearSlot() {
+    const fecha  = document.getElementById('inp-fecha').value;
+    const hora   = document.getElementById('inp-hora').value;
+    const cupos  = parseInt(document.getElementById('inp-cupos').value);
+
+    if (!fecha || !hora) { alert('Completa fecha y hora'); return; }
+
+    await api('slots', {
+      method: 'POST',
+      body: JSON.stringify({ fecha, hora, cupos_total: cupos, cupos_disponibles: cupos })
+    });
+
+    alert('✅ Horario creado');
+    cargarSlots();
+  }
+
+  async function crearSlotsRango() {
+    const desde = new Date(document.getElementById('inp-desde').value + 'T12:00:00');
+    const hasta = new Date(document.getElementById('inp-hasta').value + 'T12:00:00');
+    const hora  = document.getElementById('inp-hora-multi').value;
+    const cupos = parseInt(document.getElementById('inp-cupos-multi').value);
+
+    if (!hora) { alert('Ingresa la hora'); return; }
+
+    let creados = 0;
+    let current = new Date(desde);
+    while (current <= hasta) {
+      const dia = current.getDay();
+      if (dia !== 0 && dia !== 6) {
+        const fechaStr = current.toISOString().slice(0,10);
+        await api('slots', {
+          method: 'POST',
+          body: JSON.stringify({ fecha: fechaStr, hora, cupos_total: cupos, cupos_disponibles: cupos })
+        });
+        creados++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    alert(`✅ ${creados} horarios creados`);
+    cargarSlots();
+  }
+
+  async function cargarSlots() {
+    const lista = document.getElementById('slots-list');
+    lista.innerHTML = '<div class="empty-state">Cargando...</div>';
+
+    const data = await api('slots?order=fecha.asc,hora.asc&limit=60');
+
+    if (!Array.isArray(data) || data.length === 0) {
+      lista.innerHTML = '<div class="empty-state">No hay horarios creados aún.</div>';
+      return;
+    }
+
+    lista.innerHTML = '';
+    data.forEach(slot => {
+      const fecha = new Date(slot.fecha + 'T12:00:00');
+      const esBloqueado = slot.bloqueado;
+      const estaLleno = slot.cupos_disponibles === 0;
+
+      let badgeClass = 'disponible';
+      let badgeText = `${slot.cupos_disponibles}/${slot.cupos_total} cupos`;
+      if (esBloqueado) { badgeClass = 'bloqueado-badge'; badgeText = 'Bloqueado'; }
+      else if (estaLleno) { badgeClass = 'lleno'; badgeText = 'Completo'; }
+
+      const el = document.createElement('div');
+      el.className = `slot-item${esBloqueado ? ' bloqueado' : ''}`;
+      el.innerHTML = `
+        <div class="slot-fecha-hora">
+          <div class="slot-fecha">${DIAS_NOMBRE[fecha.getDay()]} ${fecha.getDate()} ${MESES[fecha.getMonth()]} ${fecha.getFullYear()}</div>
+          <div class="slot-hora-txt">${slot.hora.slice(0,5)} hrs</div>
+        </div>
+        <span class="badge-cupos ${badgeClass}">${badgeText}</span>
+        <div class="slot-acciones">
+          <button class="btn-accion" onclick="verReservas('${slot.id}', '${slot.hora.slice(0,5)} - ${fecha.getDate()} ${MESES[fecha.getMonth()]}')">Ver</button>
+          <button class="btn-accion" onclick="toggleBloqueo('${slot.id}', ${esBloqueado})">${esBloqueado ? 'Desbloquear' : 'Bloquear'}</button>
+          <button class="btn-accion danger" onclick="eliminarSlot('${slot.id}')">🗑</button>
+        </div>
+      `;
+      lista.appendChild(el);
+    });
+  }
+
+  async function toggleBloqueo(id, estaBloqueado) {
+    await api(`slots?id=eq.${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ bloqueado: !estaBloqueado })
+    });
+    cargarSlots();
+  }
+
+  async function eliminarSlot(id) {
+    if (!confirm('¿Eliminar este horario y todas sus reservas?')) return;
+    await api(`slots?id=eq.${id}`, { method: 'DELETE' });
+    cargarSlots();
+  }
+
+  async function verReservas(slotId, label) {
+    document.getElementById('modal-titulo').textContent = `Reservas — ${label}`;
+    document.getElementById('modal-lista').innerHTML = '<div class="empty-state">Cargando...</div>';
+    document.getElementById('modal-reservas').classList.add('visible');
+
+    const data = await api(`reservas?slot_id=eq.${slotId}&order=created_at.asc`);
+    const lista = document.getElementById('modal-lista');
+
+    if (!Array.isArray(data) || data.length === 0) {
+      lista.innerHTML = '<div class="empty-state">No hay reservas para este horario.</div>';
+      return;
+    }
+
+    lista.innerHTML = '';
+    data.forEach((r, i) => {
+      const el = document.createElement('div');
+      el.className = 'reserva-item';
+      el.innerHTML = `
+        <div class="reserva-nombre">${i+1}. ${r.nombre} ${r.apellido}</div>
+        <div class="reserva-datos">${r.correo}${r.empresa ? ' · ' + r.empresa : ''}</div>
+      `;
+      lista.appendChild(el);
+    });
+  }
+
+  function cerrarModal() {
+    document.getElementById('modal-reservas').classList.remove('visible');
+  }
+</script>
+</body>
+</html>
