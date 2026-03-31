@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel Admin — Capacitaciones SBP</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --rojo: #EC111A; --rojo-oscuro: #b80d13; --negro: #1a1a1a;
+      --gris: #6b7280; --gris-claro: #f4f4f5; --borde: #e4e4e7; --blanco: #ffffff;
+      --verde: #10b981; --amarillo: #f59e0b; --azul: #3b82f6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #f3f4f6; color: var(--negro); min-height: 100vh; }
+
+    /* LOGIN */
+    .login-screen { position: fixed; inset: 0; background: var(--negro); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .login-box { background: var(--blanco); border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 340px; text-align: center; }
+    .login-box .banda { width: 36px; height: 4px; background: var(--rojo); border-radius: 3px; margin: 0 auto 18px; }
+    .login-box h2 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: 5px; }
+    .login-box p { color: var(--gris); font-size: 0.82rem; margin-bottom: 22px; }
+    .login-box input { width: 100%; border: 1.5px solid var(--borde); border-radius: 8px; padding: 10px 13px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; outline: none; margin-bottom: 10px; }
+    .login-box input:focus { border-color: var(--rojo); }
+    .login-box button { width: 100%; background: var(--rojo); color: white; border: none; border-radius: 8px; padding: 11px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600; cursor: pointer; }
+    .login-error { color: var(--rojo); font-size: 0.78rem; margin-top: 8px; display: none; }
+
+    /* HEADER */
+    header { background: var(--negro); color: white; padding: 13px 28px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 50; }
+    .logo-banda-h { width: 4px; height: 26px; background: var(--rojo); border-radius: 3px; }
+    .logo-texto-h { font-family: 'DM Serif Display', serif; font-size: 1.1rem; }
+    .logo-texto-h span { color: var(--rojo); }
+    .header-badge { margin-left: auto; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; }
+
+    /* NAV */
+    .nav-tabs { background: var(--blanco); border-bottom: 1px solid var(--borde); display: flex; padding: 0 28px; }
+    .nav-tab { padding: 12px 18px; border: none; background: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 500; color: var(--gris); border-bottom: 2px solid transparent; transition: all 0.15s; }
+    .nav-tab.active { color: var(--rojo); border-bottom-color: var(--rojo); font-weight: 600; }
+
+    /* PÁGINAS */
+    .page { display: none; max-width: 1100px; margin: 24px auto; padding: 0 20px; }
+    .page.active { display: block; }
+
+    .card { background: var(--blanco); border: 1px solid var(--borde); border-radius: 14px; padding: 22px; margin-bottom: 18px; }
+    .card-title { font-size: 0.9rem; font-weight: 600; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+
+    /* ═══ VISTA CALENDARIO TIPO TEAMS ═══ */
+    .teams-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .teams-header h2 { font-size: 1.1rem; font-weight: 600; text-transform: capitalize; }
+    .teams-nav { display: flex; gap: 4px; }
+    .teams-nav button { background: var(--gris-claro); border: none; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; }
+    .teams-nav button:hover { background: var(--borde); }
+    .btn-hoy { background: var(--gris-claro); border: 1px solid var(--borde); border-radius: 6px; padding: 4px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; cursor: pointer; }
+    .btn-hoy:hover { background: var(--borde); }
+
+    /* GRILLA TEAMS */
+    .teams-grid { display: grid; grid-template-columns: 60px repeat(5, 1fr); border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; background: var(--blanco); }
+
+    .tg-corner { background: var(--gris-claro); border-right: 1px solid var(--borde); border-bottom: 1px solid var(--borde); padding: 8px; }
+    .tg-dia-header { background: var(--gris-claro); border-right: 1px solid var(--borde); border-bottom: 1px solid var(--borde); padding: 10px 8px; text-align: center; }
+    .tg-dia-header.hoy-col { background: #fff0f0; }
+    .tg-dia-nombre { font-size: 0.68rem; font-weight: 600; color: var(--gris); text-transform: uppercase; }
+    .tg-dia-num { font-size: 1.3rem; font-weight: 600; color: var(--negro); line-height: 1.2; }
+    .tg-dia-num.hoy-num { color: var(--rojo); }
+
+    .tg-hora { background: var(--gris-claro); border-right: 1px solid var(--borde); border-bottom: 1px solid #f0f0f0; padding: 6px 8px; font-size: 0.68rem; color: var(--gris); text-align: right; min-height: 60px; display: flex; align-items: flex-start; justify-content: flex-end; padding-top: 4px; }
+    .tg-celda { border-right: 1px solid #f0f0f0; border-bottom: 1px solid #f0f0f0; min-height: 60px; padding: 3px; position: relative; }
+    .tg-celda:last-child { border-right: none; }
+
+    .tg-slot {
+      background: #dbeafe; border-left: 3px solid var(--azul); border-radius: 4px;
+      padding: 4px 6px; margin-bottom: 2px; cursor: pointer; transition: all 0.15s;
+      font-size: 0.7rem;
+    }
+    .tg-slot:hover { filter: brightness(0.95); }
+    .tg-slot.lleno { background: #fee2e2; border-left-color: var(--rojo); }
+    .tg-slot.bloqueado { background: #fef3c7; border-left-color: var(--amarillo); opacity: 0.7; }
+    .tg-slot-hora { font-weight: 600; color: #1e40af; display: block; }
+    .tg-slot.lleno .tg-slot-hora { color: var(--rojo-oscuro); }
+    .tg-slot.bloqueado .tg-slot-hora { color: #92400e; }
+    .tg-slot-info { color: #3b4f6b; font-size: 0.65rem; }
+    .tg-slot.lleno .tg-slot-info { color: #7f1d1d; }
+
+    /* ═══ CREAR HORARIOS ═══ */
+    .tabs-crear { display: flex; gap: 3px; background: var(--gris-claro); border-radius: 8px; padding: 3px; margin-bottom: 20px; }
+    .tab-crear { flex: 1; padding: 8px; border: none; background: none; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 500; cursor: pointer; color: var(--gris); transition: all 0.15s; }
+    .tab-crear.active { background: var(--blanco); color: var(--negro); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .tab-crear-content { display: none; }
+    .tab-crear-content.active { display: block; }
+
+    .form-crear { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .fg { display: flex; flex-direction: column; gap: 4px; }
+    .fg.full { grid-column: 1 / -1; }
+    .fg label { font-size: 0.69rem; font-weight: 600; color: var(--gris); text-transform: uppercase; letter-spacing: 0.3px; }
+    .fg select, .fg input { border: 1.5px solid var(--borde); border-radius: 8px; padding: 9px 11px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; outline: none; background: white; }
+    .fg select:focus, .fg input:focus { border-color: var(--rojo); }
+    .time-range { display: flex; align-items: center; gap: 8px; }
+    .time-range span { color: var(--gris); font-size: 0.8rem; }
+
+    .btn-crear {
+      background: var(--rojo); color: white; border: none; border-radius: 8px;
+      padding: 11px 24px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+      font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 8px;
+    }
+    .btn-crear:hover { background: var(--rojo-oscuro); }
+    .btn-crear:disabled { background: #ccc; cursor: not-allowed; }
+
+    .toast {
+      display: none; align-items: center; gap: 10px;
+      background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46;
+      border-radius: 8px; padding: 12px 16px; margin-top: 14px; font-size: 0.85rem;
+    }
+    .toast.visible { display: flex; }
+    .toast.error { background: #fff0f0; border-color: #fca5a5; color: #7f1d1d; }
+
+    /* ═══ EDITAR HORARIOS (CALENDARIO) ═══ */
+    .edit-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .edit-cal-nav { display: flex; gap: 5px; align-items: center; }
+    .edit-cal-nav button { background: var(--gris-claro); border: none; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-size: 0.9rem; }
+
+    .edit-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .ecg-nombre { text-align: center; font-size: 0.65rem; font-weight: 600; color: var(--gris); text-transform: uppercase; padding: 6px 0; }
+    .ecg-dia { min-height: 90px; border: 1px solid var(--borde); border-radius: 8px; padding: 6px; background: var(--blanco); }
+    .ecg-dia.vacio, .ecg-dia.finde { background: #fafafa; border-color: #f0f0f0; }
+    .ecg-dia.hoy { border-color: var(--rojo); }
+    .ecg-dia-num { font-size: 0.78rem; font-weight: 600; color: var(--negro); margin-bottom: 4px; }
+    .ecg-dia.finde .ecg-dia-num, .ecg-dia.vacio .ecg-dia-num { color: #ccc; }
+    .ecg-dia.hoy .ecg-dia-num { color: var(--rojo); }
+
+    .ecg-slot {
+      background: #eff6ff; border-radius: 4px; padding: 3px 5px; margin-bottom: 2px;
+      font-size: 0.62rem; cursor: pointer; border-left: 2px solid var(--azul); transition: all 0.15s;
+    }
+    .ecg-slot:hover { filter: brightness(0.93); }
+    .ecg-slot.lleno { background: #fee2e2; border-left-color: var(--rojo); }
+    .ecg-slot.bloqueado { background: #fef3c7; border-left-color: var(--amarillo); opacity: 0.8; }
+    .ecg-slot-hora { font-weight: 700; color: #1e40af; display: block; }
+    .ecg-slot.lleno .ecg-slot-hora { color: var(--rojo); }
+    .ecg-slot.bloqueado .ecg-slot-hora { color: #92400e; }
+    .ecg-slot-cupos { color: #475569; }
+
+    /* PANEL DETALLE SLOT */
+    .slot-detail-panel {
+      display: none; position: fixed; right: 0; top: 0; bottom: 0; width: 320px;
+      background: var(--blanco); border-left: 1px solid var(--borde); z-index: 300;
+      padding: 24px; overflow-y: auto; box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+    }
+    .slot-detail-panel.visible { display: block; }
+    .sdp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .sdp-header h3 { font-size: 0.95rem; font-weight: 600; }
+    .sdp-close { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--gris); }
+
+    .sdp-info { background: var(--gris-claro); border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 0.85rem; }
+    .sdp-info p { margin-bottom: 4px; }
+
+    .sdp-acciones { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .sdp-btn { border: 1.5px solid var(--borde); background: var(--blanco); border-radius: 8px; padding: 9px 14px; font-family: 'DM Sans', sans-serif; font-size: 0.83rem; cursor: pointer; text-align: left; transition: all 0.15s; font-weight: 500; }
+    .sdp-btn:hover { border-color: var(--negro); }
+    .sdp-btn.danger { color: var(--rojo); }
+    .sdp-btn.danger:hover { border-color: var(--rojo); background: #fff7f7; }
+    .sdp-btn.warning:hover { border-color: var(--amarillo); background: #fffbeb; }
+
+    .sdp-inscritos h4 { font-size: 0.8rem; font-weight: 600; margin-bottom: 10px; color: var(--gris); text-transform: uppercase; letter-spacing: 0.3px; }
+    .inscrito-item { border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; margin-bottom: 7px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .inscrito-datos { flex: 1; }
+    .inscrito-nombre { font-weight: 600; font-size: 0.83rem; }
+    .inscrito-info { color: var(--gris); font-size: 0.75rem; margin-top: 2px; }
+    .inscrito-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1rem; padding: 0 0 0 8px; transition: color 0.15s; }
+    .inscrito-del:hover { color: var(--rojo); }
+
+    .edit-cupos-form { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .edit-cupos-form input { border: 1.5px solid var(--borde); border-radius: 7px; padding: 7px 10px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; outline: none; width: 80px; }
+    .edit-cupos-form input:focus { border-color: var(--rojo); }
+    .edit-cupos-form button { background: var(--rojo); color: white; border: none; border-radius: 7px; padding: 7px 14px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+
+    .loading-sm { display: inline-block; width: 12px; height: 12px; border: 2px solid #ddd; border-top-color: var(--rojo); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state { text-align: center; padding: 24px; color: var(--gris); font-size: 0.83rem; }
+
+    .legend { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--gris); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="banda"></div>
+    <h2>Panel de Administración</h2>
+    <p>Ingresa la contraseña para continuar</p>
+    <input type="password" id="inp-pwd" placeholder="Contraseña" />
+    <div class="login-error" id="login-error">Contraseña incorrecta</div>
+    <button onclick="checkLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- PANEL DETALLE SLOT -->
+<div class="slot-detail-panel" id="sdp">
+  <div class="sdp-header">
+    <h3 id="sdp-titulo">Detalle del horario</h3>
+    <button class="sdp-close" onclick="cerrarSDP()">✕</button>
+  </div>
+  <div class="sdp-info" id="sdp-info"></div>
+
+  <div class="sdp-acciones">
+    <div>
+      <p style="font-size:0.72rem;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px">Editar cupos disponibles</p>
+      <div class="edit-cupos-form">
+        <input type="number" id="sdp-cupos-input" min="0" max="30" />
+        <button onclick="guardarCupos()">Guardar</button>
+      </div>
+    </div>
+    <button class="sdp-btn warning" id="sdp-btn-bloquear" onclick="toggleBloqueoSDP()">🔒 Bloquear horario</button>
+    <button class="sdp-btn danger" onclick="eliminarSDP()">🗑 Eliminar horario</button>
+  </div>
+
+  <div class="sdp-inscritos">
+    <h4>Inscritos</h4>
+    <div id="sdp-inscritos-lista"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo-banda-h"></div>
+  <div class="logo-texto-h">Scotia<span>bank</span> Admin</div>
+  <div class="header-badge">Panel de Capacitaciones</div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="goTab('vista')">📅 Vista semanal</button>
+  <button class="nav-tab" onclick="goTab('crear')">➕ Crear horarios</button>
+  <button class="nav-tab" onclick="goTab('editar')">✏️ Editar horarios</button>
+</nav>
+
+<!-- ═══ VISTA SEMANAL TIPO TEAMS ═══ -->
+<div class="page active" id="page-vista">
+  <div class="card">
+    <div class="teams-header">
+      <div class="teams-nav">
+        <button onclick="semPrev()">‹</button>
+        <button onclick="semNext()">›</button>
+      </div>
+      <h2 id="teams-titulo"></h2>
+      <button class="btn-hoy" onclick="irHoy()">Hoy</button>
+      <button class="btn-hoy" onclick="cargarVistaSemanal()" style="margin-left:4px">↻</button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#dbeafe;border-left:2px solid var(--azul)"></div>Disponible</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;border-left:2px solid var(--rojo)"></div>Lleno</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;border-left:2px solid var(--amarillo)"></div>Bloqueado</div>
+    </div>
+
+    <div class="teams-grid" id="teams-grid"></div>
+  </div>
+</div>
+
+<!-- ═══ CREAR HORARIOS ═══ -->
+<div class="page" id="page-crear">
+  <div class="card">
+    <div class="card-title">Crear nuevos horarios</div>
+
+    <div class="tabs-crear">
+      <button class="tab-crear active" onclick="switchCrear('individual')">Individual</button>
+      <button class="tab-crear" onclick="switchCrear('rango')">Rango de fechas</button>
+    </div>
+
+    <div class="tab-crear-content active" id="tc-individual">
+      <div class="form-crear">
+        <div class="fg"><label>Fecha</label><input type="date" id="c-fecha" /></div>
+        <div class="fg"><label>Cupos disponibles</label><input type="number" id="c-cupos" value="6" min="1" max="30" /></div>
+        <div class="fg full">
+          <label>Horario (inicio — fin)</label>
+          <div class="time-range">
+            <select id="c-hora-inicio"></select>
+            <span>→</span>
+            <select id="c-hora-fin"></select>
+          </div>
+        </div>
+        <div class="fg full">
+          <button class="btn-crear" id="btn-crear-individual" onclick="crearIndividual()">Crear horario</button>
+          <div class="toast" id="toast-individual"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-crear-content" id="tc-rango">
+      <div class="form-crear">
+        <div class="fg"><label>Desde</label><input type="date" id="r-desde" /></div>
+        <div class="fg"><label>Hasta</label><input type="date" id="r-hasta" /></div>
+        <div class="fg"><label>Cupos por sesión</label><input type="number" id="r-cupos" value="6" min="1" max="30" /></div>
+        <div class="fg full">
+          <label>Horario (inicio — fin)</label>
+          <div class="time-range">
+            <select id="r-hora-inicio"></select>
+            <span>→</span>
+            <select id="r-hora-fin"></select>
+          </div>
+        </div>
+        <div class="fg full">
+          <button class="btn-crear" id="btn-crear-rango" onclick="crearRango()">Crear horarios (L–V)</button>
+          <div class="toast" id="toast-rango"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EDITAR HORARIOS (CALENDARIO) ═══ -->
+<div class="page" id="page-editar">
+  <div class="card">
+    <div class="edit-cal-header">
+      <div class="edit-cal-nav">
+        <button onclick="ecPrev()">‹</button>
+        <h3 id="ec-titulo" style="font-size:0.95rem;font-weight:600;min-width:160px;text-align:center;text-transform:capitalize"></h3>
+        <button onclick="ecNext()">›</button>
+      </div>
+      <button class="btn-hoy" onclick="cargarEditar()">↻ Actualizar</button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#eff6ff;border-left:2px solid var(--azul)"></div>Disponible</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;border-left:2px solid var(--rojo)"></div>Lleno</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;border-left:2px solid var(--amarillo)"></div>Bloqueado</div>
+    </div>
+
+    <div class="edit-cal-grid" id="ec-grid"></div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://evqznmyvhhtzmmvtoytm.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_F7ZbldPprrVRH0wdBT20HA_pzCZ3Cgt';
+  const ADMIN_PASS = 'Scotia2025'; // CAMBIA ESTA CONTRASEÑA
+
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+  const api = (path, opts={}) =>
+    fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation', ...opts.headers },
+      ...opts
+    }).then(r=>r.json());
+
+  // LOGIN
+  function checkLogin() {
+    if(document.getElementById('inp-pwd').value === ADMIN_PASS) {
+      document.getElementById('login-screen').style.display='none';
+      inicializar();
+    } else { document.getElementById('login-error').style.display='block'; }
+  }
+  document.getElementById('inp-pwd').addEventListener('keydown', e=>{ if(e.key==='Enter') checkLogin(); });
+
+  // TABS
+  function goTab(tab) {
+    document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['vista','crear','editar'][i]===tab));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+tab).classList.add('active');
+    cerrarSDP();
+    if(tab==='vista') cargarVistaSemanal();
+    if(tab==='editar') cargarEditar();
+  }
+
+  // TIME SELECTS
+  function buildTimeOptions(selEl, defaultVal) {
+    selEl.innerHTML='';
+    for(let h=7;h<=20;h++){
+      for(let m=0;m<60;m+=15){
+        const val=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        const opt=document.createElement('option');
+        opt.value=val; opt.textContent=val;
+        if(val===defaultVal) opt.selected=true;
+        selEl.appendChild(opt);
+      }
+    }
+  }
+
+  function switchCrear(tab) {
+    document.querySelectorAll('.tab-crear').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='individual')||(i===1&&tab==='rango')));
+    document.getElementById('tc-individual').classList.toggle('active',tab==='individual');
+    document.getElementById('tc-rango').classList.toggle('active',tab==='rango');
+  }
+
+  function showToast(id, msg, isError=false) {
+    const t=document.getElementById(id);
+    t.textContent=(isError?'❌ ':'✅ ')+msg;
+    t.className='toast visible'+(isError?' error':'');
+    setTimeout(()=>t.classList.remove('visible'),4000);
+  }
+
+  // CREAR INDIVIDUAL
+  async function crearIndividual() {
+    const fecha=document.getElementById('c-fecha').value;
+    const horaI=document.getElementById('c-hora-inicio').value;
+    const horaF=document.getElementById('c-hora-fin').value;
+    const cupos=parseInt(document.getElementById('c-cupos').value);
+    if(!fecha||!horaI){showToast('toast-individual','Completa la fecha y hora',true);return;}
+    const btn=document.getElementById('btn-crear-individual');
+    btn.disabled=true; btn.innerHTML='<span class="loading-sm"></span> Creando...';
+    try {
+      await api('slots',{method:'POST',body:JSON.stringify({fecha,hora:horaI,hora_fin:horaF,cupos_total:cupos,cupos_disponibles:cupos})});
+      showToast('toast-individual',`Horario ${horaI}–${horaF} creado para el ${fecha}`);
+    } catch(e) { showToast('toast-individual','Error al crear. Intenta nuevamente.',true); }
+    btn.disabled=false; btn.textContent='Crear horario';
+  }
+
+  // CREAR RANGO
+  async function crearRango() {
+    const desde=new Date(document.getElementById('r-desde').value+'T12:00:00');
+    const hasta=new Date(document.getElementById('r-hasta').value+'T12:00:00');
+    const horaI=document.getElementById('r-hora-inicio').value;
+    const horaF=document.getElementById('r-hora-fin').value;
+    const cupos=parseInt(document.getElementById('r-cupos').value);
+    if(!horaI||isNaN(desde)){showToast('toast-rango','Completa todos los campos',true);return;}
+    const btn=document.getElementById('btn-crear-rango');
+    btn.disabled=true; btn.innerHTML='<span class="loading-sm"></span> Creando...';
+    let creados=0, cur=new Date(desde);
+    try {
+      while(cur<=hasta){
+        if(cur.getDay()!==0&&cur.getDay()!==6){
+          const fStr=cur.toISOString().slice(0,10);
+          await api('slots',{method:'POST',body:JSON.stringify({fecha:fStr,hora:horaI,hora_fin:horaF,cupos_total:cupos,cupos_disponibles:cupos})});
+          creados++;
+        }
+        cur.setDate(cur.getDate()+1);
+      }
+      showToast('toast-rango',`${creados} horarios creados correctamente`);
+    } catch(e) { showToast('toast-rango','Error al crear. Intenta nuevamente.',true); }
+    btn.disabled=false; btn.textContent='Crear horarios (L–V)';
+  }
+
+  // ═══ VISTA SEMANAL TIPO TEAMS ═══
+  let semBase = new Date();
+  let todosSlots = [];
+
+  function getLunes(d) {
+    const dia = new Date(d); dia.setHours(0,0,0,0);
+    const dow = dia.getDay();
+    const diff = dow===0?-6:1-dow;
+    dia.setDate(dia.getDate()+diff);
+    return dia;
+  }
+
+  async function cargarVistaSemanal() {
+    const data = await api('slots?order=fecha.asc,hora.asc&limit=200');
+    todosSlots = Array.isArray(data)?data:[];
+    renderSemanal();
+  }
+
+  function renderSemanal() {
+    const lunes = getLunes(semBase);
+    const dias = [];
+    for(let i=0;i<5;i++){
+      const d=new Date(lunes); d.setDate(d.getDate()+i); dias.push(d);
+    }
+    const fin = new Date(dias[4]);
+    const titulo = `${lunes.getDate()} ${MESES[lunes.getMonth()]} – ${fin.getDate()} ${MESES[fin.getMonth()]} ${fin.getFullYear()}`;
+    document.getElementById('teams-titulo').textContent=titulo;
+
+    // Horas a mostrar (7am a 7pm)
+    const horas = [];
+    for(let h=7;h<=19;h++) horas.push(h);
+
+    const hoy=new Date(); hoy.setHours(0,0,0,0);
+    const grid=document.getElementById('teams-grid');
+    grid.innerHTML='';
+
+    // Headers
+    const corner=document.createElement('div');corner.className='tg-corner';grid.appendChild(corner);
+    dias.forEach(d=>{
+      const esHoy=d.getTime()===hoy.getTime();
+      const h=document.createElement('div');
+      h.className='tg-dia-header'+(esHoy?' hoy-col':'');
+      h.innerHTML=`<div class="tg-dia-nombre">${['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'][d.getDay()]}</div><div class="tg-dia-num${esHoy?' hoy-num':''}">${d.getDate()}</div>`;
+      grid.appendChild(h);
+    });
+
+    // Filas de hora
+    horas.forEach(h=>{
+      const horaEl=document.createElement('div');horaEl.className='tg-hora';horaEl.textContent=`${String(h).padStart(2,'0')}:00`;
+      grid.appendChild(horaEl);
+      dias.forEach(d=>{
+        const fStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const celda=document.createElement('div');celda.className='tg-celda';
+        // Slots que empiezan en esta hora
+        const slotsEnCelda=todosSlots.filter(s=>s.fecha===fStr&&parseInt(s.hora.slice(0,2))===h);
+        slotsEnCelda.forEach(s=>{
+          const horario=s.hora_fin?`${s.hora.slice(0,5)}–${s.hora_fin.slice(0,5)}`:s.hora.slice(0,5);
+          const div=document.createElement('div');
+          div.className='tg-slot'+(s.bloqueado?' bloqueado':s.cupos_disponibles===0?' lleno':'');
+          div.innerHTML=`<span class="tg-slot-hora">${horario}</span><span class="tg-slot-info">${s.bloqueado?'Bloqueado':s.cupos_disponibles+'/'+s.cupos_total+' cupos'}</span>`;
+          div.onclick=()=>abrirSDP(s);
+          celda.appendChild(div);
+        });
+        grid.appendChild(celda);
+      });
+    });
+  }
+
+  function semPrev(){semBase.setDate(semBase.getDate()-7);renderSemanal();}
+  function semNext(){semBase.setDate(semBase.getDate()+7);renderSemanal();}
+  function irHoy(){semBase=new Date();renderSemanal();}
+
+  // ═══ EDITAR HORARIOS (CALENDARIO MENSUAL) ═══
+  let ecMes = new Date();
+  let ecSlots = [];
+  ecMes = new Date(ecMes.getFullYear(), ecMes.getMonth(), 1);
+
+  async function cargarEditar() {
+    const data=await api('slots?order=fecha.asc,hora.asc&limit=300');
+    ecSlots=Array.isArray(data)?data:[];
+    renderEC();
+  }
+
+  function renderEC() {
+    const grid=document.getElementById('ec-grid');
+    document.getElementById('ec-titulo').textContent=`${MESES[ecMes.getMonth()]} ${ecMes.getFullYear()}`;
+    grid.innerHTML='';
+    ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(n=>{
+      const el=document.createElement('div');el.className='ecg-nombre';el.textContent=n;grid.appendChild(el);
+    });
+    let offset=new Date(ecMes.getFullYear(),ecMes.getMonth(),1).getDay()-1;
+    if(offset<0) offset=6;
+    for(let i=0;i<offset;i++){const el=document.createElement('div');el.className='ecg-dia vacio';el.innerHTML='<span class="ecg-dia-num"></span>';grid.appendChild(el);}
+    const hoy=new Date();hoy.setHours(0,0,0,0);
+    const dias=new Date(ecMes.getFullYear(),ecMes.getMonth()+1,0).getDate();
+    for(let d=1;d<=dias;d++){
+      const f=new Date(ecMes.getFullYear(),ecMes.getMonth(),d);
+      const fStr=`${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const esFinde=f.getDay()===0||f.getDay()===6;
+      const esHoy=f.getTime()===hoy.getTime();
+      const el=document.createElement('div');
+      el.className='ecg-dia'+(esFinde?' finde':'')+(esHoy?' hoy':'');
+      el.innerHTML=`<div class="ecg-dia-num">${d}</div>`;
+      const daySlots=ecSlots.filter(s=>s.fecha===fStr);
+      daySlots.forEach(s=>{
+        const horario=s.hora_fin?`${s.hora.slice(0,5)}–${s.hora_fin.slice(0,5)}`:s.hora.slice(0,5);
+        const sp=document.createElement('div');
+        sp.className='ecg-slot'+(s.bloqueado?' bloqueado':s.cupos_disponibles===0?' lleno':'');
+        sp.innerHTML=`<span class="ecg-slot-hora">${horario}</span><span class="ecg-slot-cupos">${s.bloqueado?'Bloq':s.cupos_disponibles+'/'+s.cupos_total}</span>`;
+        sp.onclick=()=>abrirSDP(s);
+        el.appendChild(sp);
+      });
+      grid.appendChild(el);
+    }
+  }
+
+  function ecPrev(){ecMes.setMonth(ecMes.getMonth()-1);renderEC();}
+  function ecNext(){ecMes.setMonth(ecMes.getMonth()+1);renderEC();}
+
+  // ═══ PANEL DETALLE SLOT ═══
+  let slotActivo = null;
+
+  async function abrirSDP(slot) {
+    slotActivo=slot;
+    const f=new Date(slot.fecha+'T12:00:00');
+    const horario=slot.hora_fin?`${slot.hora.slice(0,5)} – ${slot.hora_fin.slice(0,5)}`:slot.hora.slice(0,5);
+    document.getElementById('sdp-titulo').textContent=`${DIAS_CORTO[f.getDay()]} ${f.getDate()} ${MESES[f.getMonth()].slice(0,3)}`;
+    document.getElementById('sdp-info').innerHTML=`
+      <p>🕐 <strong>${horario} hrs</strong></p>
+      <p style="margin-top:6px">Cupos: <strong>${slot.cupos_disponibles}/${slot.cupos_total}</strong></p>
+      <p>Estado: <strong>${slot.bloqueado?'Bloqueado':slot.cupos_disponibles===0?'Completo':'Activo'}</strong></p>
+    `;
+    document.getElementById('sdp-cupos-input').value=slot.cupos_disponibles;
+    const btnBloquear=document.getElementById('sdp-btn-bloquear');
+    btnBloquear.textContent=slot.bloqueado?'🔓 Desbloquear horario':'🔒 Bloquear horario';
+    document.getElementById('sdp').classList.add('visible');
+    cargarInscritosSDP(slot.id);
+  }
+
+  function cerrarSDP(){document.getElementById('sdp').classList.remove('visible');slotActivo=null;}
+
+  async function cargarInscritosSDP(slotId) {
+    const lista=document.getElementById('sdp-inscritos-lista');
+    lista.innerHTML='<div class="empty-state"><span class="loading-sm"></span></div>';
+    const data=await api(`reservas?slot_id=eq.${slotId}&order=created_at.asc`);
+    if(!Array.isArray(data)||!data.length){lista.innerHTML='<div class="empty-state">Sin inscritos aún.</div>';return;}
+    lista.innerHTML='';
+    data.forEach((r,i)=>{
+      const el=document.createElement('div');el.className='inscrito-item';
+      el.innerHTML=`
+        <div class="inscrito-datos">
+          <div class="inscrito-nombre">${i+1}. ${r.nombre} ${r.apellido}</div>
+          <div class="inscrito-info">${r.correo}${r.empresa?' · '+r.empresa:''}${r.ruc?' · RUC: '+r.ruc:''}</div>
+        </div>
+        <button class="inscrito-del" title="Eliminar inscrito" onclick="eliminarInscrito('${r.id}','${slotId}')">✕</button>
+      `;
+      lista.appendChild(el);
+    });
+  }
+
+  async function eliminarInscrito(reservaId, slotId) {
+    if(!confirm('¿Eliminar este inscrito?')) return;
+    await api(`reservas?id=eq.${reservaId}`,{method:'DELETE'});
+    // Devolver el cupo
+    const slotData=await api(`slots?id=eq.${slotId}`);
+    if(Array.isArray(slotData)&&slotData[0]){
+      await api(`slots?id=eq.${slotId}`,{method:'PATCH',body:JSON.stringify({cupos_disponibles:slotData[0].cupos_disponibles+1})});
+    }
+    cargarInscritosSDP(slotId);
+    cargarEditar();
+    cargarVistaSemanal();
+  }
+
+  async function guardarCupos() {
+    if(!slotActivo) return;
+    const n=parseInt(document.getElementById('sdp-cupos-input').value);
+    if(isNaN(n)||n<0){alert('Valor inválido');return;}
+    await api(`slots?id=eq.${slotActivo.id}`,{method:'PATCH',body:JSON.stringify({cupos_disponibles:n})});
+    slotActivo.cupos_disponibles=n;
+    cargarEditar(); cargarVistaSemanal();
+    alert('✅ Cupos actualizados');
+  }
+
+  async function toggleBloqueoSDP() {
+    if(!slotActivo) return;
+    await api(`slots?id=eq.${slotActivo.id}`,{method:'PATCH',body:JSON.stringify({bloqueado:!slotActivo.bloqueado})});
+    cerrarSDP(); cargarEditar(); cargarVistaSemanal();
+  }
+
+  async function eliminarSDP() {
+    if(!slotActivo) return;
+    if(!confirm('¿Eliminar este horario y todas sus reservas?')) return;
+    await api(`slots?id=eq.${slotActivo.id}`,{method:'DELETE'});
+    cerrarSDP(); cargarEditar(); cargarVistaSemanal();
+  }
+
+  // INIT
+  function inicializar() {
+    buildTimeOptions(document.getElementById('c-hora-inicio'),'09:00');
+    buildTimeOptions(document.getElementById('c-hora-fin'),'10:30');
+    buildTimeOptions(document.getElementById('r-hora-inicio'),'09:00');
+    buildTimeOptions(document.getElementById('r-hora-fin'),'10:30');
+    cargarVistaSemanal();
+  }
+</script>
+</body>
+</html>
