@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel Admin — Capacitaciones SBP</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --rojo:#EC111A;--rojo-oscuro:#b80d13;--negro:#1a1a1a;
+      --gris:#6b7280;--gris-claro:#f4f4f5;--borde:#e4e4e7;--blanco:#ffffff;
+      --verde:#10b981;--amarillo:#f59e0b;--azul:#3b82f6;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans',sans-serif;background:#f3f4f6;color:var(--negro);min-height:100vh;}
+
+    .login-screen{position:fixed;inset:0;background:var(--negro);display:flex;align-items:center;justify-content:center;z-index:100;}
+    .login-box{background:var(--blanco);border-radius:16px;padding:40px 36px;width:100%;max-width:340px;text-align:center;}
+    .login-box .banda{width:36px;height:4px;background:var(--rojo);border-radius:3px;margin:0 auto 18px;}
+    .login-box h2{font-family:'DM Serif Display',serif;font-size:1.3rem;margin-bottom:5px;}
+    .login-box p{color:var(--gris);font-size:0.82rem;margin-bottom:22px;}
+    .login-box input{width:100%;border:1.5px solid var(--borde);border-radius:8px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:0.88rem;outline:none;margin-bottom:10px;}
+    .login-box input:focus{border-color:var(--rojo);}
+    .login-box button{width:100%;background:var(--rojo);color:white;border:none;border-radius:8px;padding:11px;font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;}
+    .login-error{color:var(--rojo);font-size:0.78rem;margin-top:8px;display:none;}
+
+    header{background:var(--negro);color:white;padding:13px 28px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+    .logo-banda-h{width:4px;height:26px;background:var(--rojo);border-radius:3px;}
+    .logo-texto-h{font-family:'DM Serif Display',serif;font-size:1.1rem;}
+    .logo-texto-h span{color:var(--rojo);}
+    .header-badge{margin-left:auto;background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.6);font-size:0.72rem;padding:3px 10px;border-radius:20px;}
+
+    .nav-tabs{background:var(--blanco);border-bottom:1px solid var(--borde);display:flex;padding:0 28px;}
+    .nav-tab{padding:12px 18px;border:none;background:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.83rem;font-weight:500;color:var(--gris);border-bottom:2px solid transparent;transition:all 0.15s;}
+    .nav-tab.active{color:var(--rojo);border-bottom-color:var(--rojo);font-weight:600;}
+
+    .page{display:none;max-width:1100px;margin:24px auto;padding:0 20px;}
+    .page.active{display:block;}
+    .card{background:var(--blanco);border:1px solid var(--borde);border-radius:14px;padding:22px;margin-bottom:18px;}
+    .card-title{font-size:0.9rem;font-weight:600;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
+
+    /* ═══ VISTA SEMANAL PROPORCIONAL ═══ */
+    .teams-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+    .teams-toolbar h2{font-size:1rem;font-weight:600;text-transform:capitalize;min-width:200px;}
+    .teams-nav{display:flex;gap:4px;}
+    .teams-nav button{background:var(--gris-claro);border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;}
+    .teams-nav button:hover{background:var(--borde);}
+    .btn-sm{background:var(--gris-claro);border:1px solid var(--borde);border-radius:6px;padding:4px 12px;font-family:'DM Sans',sans-serif;font-size:0.78rem;cursor:pointer;}
+    .btn-sm:hover{background:var(--borde);}
+
+    .legend{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap;}
+    .legend-item{display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--gris);}
+    .legend-dot{width:10px;height:10px;border-radius:2px;}
+
+    /* GRILLA PROPORCIONAL */
+    .cal-wrapper{display:flex;overflow-x:auto;}
+    .time-col{flex-shrink:0;width:52px;}
+    .time-cell{height:60px;display:flex;align-items:flex-start;justify-content:flex-end;padding:2px 6px 0 0;font-size:0.65rem;color:var(--gris);border-bottom:1px solid #f0f0f0;}
+    .time-cell:first-child{height:48px;}/* header spacer */
+
+    .days-grid{flex:1;display:grid;grid-template-columns:repeat(5,1fr);min-width:0;}
+
+    .day-header{height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--gris-claro);border-right:1px solid var(--borde);border-bottom:1px solid var(--borde);}
+    .day-header.hoy-col{background:#fff0f0;}
+    .day-header-name{font-size:0.65rem;font-weight:600;color:var(--gris);text-transform:uppercase;}
+    .day-header-num{font-size:1.2rem;font-weight:600;color:var(--negro);}
+    .day-header-num.hoy-num{color:var(--rojo);}
+
+    .day-col{position:relative;border-right:1px solid #f0f0f0;}
+    .day-col:last-child{border-right:none;}
+    .hour-line{height:60px;border-bottom:1px solid #f0f0f0;}
+
+    /* BLOQUES PROPORCIONALES */
+    .slot-block{
+      position:absolute;left:2px;right:2px;
+      border-radius:5px;padding:4px 6px;cursor:pointer;
+      overflow:hidden;transition:filter 0.15s;
+      background:#dbeafe;border-left:3px solid var(--azul);
+      z-index:2;
+    }
+    .slot-block:hover{filter:brightness(0.92);}
+    .slot-block.lleno{background:#fee2e2;border-left-color:var(--rojo);}
+    .slot-block.bloqueado{background:#fef3c7;border-left-color:var(--amarillo);opacity:0.8;}
+    .slot-block.tiene-reservas{background:#c7d2fe;border-left-color:#4f46e5;}
+    .sb-hora{font-size:0.68rem;font-weight:700;color:#1e40af;display:block;white-space:nowrap;}
+    .slot-block.lleno .sb-hora{color:var(--rojo-oscuro);}
+    .slot-block.bloqueado .sb-hora{color:#92400e;}
+    .slot-block.tiene-reservas .sb-hora{color:#312e81;}
+    .sb-info{font-size:0.62rem;color:#3b4f6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+    /* ═══ PANEL LATERAL ═══ */
+    .sdp{position:fixed;right:0;top:0;bottom:0;width:340px;background:var(--blanco);border-left:1px solid var(--borde);z-index:300;padding:22px;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,0.1);display:none;}
+    .sdp.visible{display:block;}
+    .sdp-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+    .sdp-header h3{font-size:0.95rem;font-weight:600;}
+    .sdp-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gris);}
+    .sdp-info{background:var(--gris-claro);border-radius:8px;padding:14px;margin-bottom:16px;font-size:0.85rem;line-height:1.7;}
+    .sdp-section{margin-bottom:18px;}
+    .sdp-section-title{font-size:0.7rem;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;}
+    .sdp-btn{width:100%;border:1.5px solid var(--borde);background:var(--blanco);border-radius:8px;padding:9px 14px;font-family:'DM Sans',sans-serif;font-size:0.83rem;cursor:pointer;text-align:left;transition:all 0.15s;font-weight:500;margin-bottom:6px;display:block;}
+    .sdp-btn:hover{border-color:var(--negro);}
+    .sdp-btn.danger{color:var(--rojo);}
+    .sdp-btn.danger:hover{border-color:var(--rojo);background:#fff7f7;}
+    .edit-cupos-row{display:flex;gap:8px;align-items:center;}
+    .edit-cupos-row input{border:1.5px solid var(--borde);border-radius:7px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;width:80px;}
+    .edit-cupos-row input:focus{border-color:var(--rojo);}
+    .edit-cupos-row button{background:var(--rojo);color:white;border:none;border-radius:7px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;}
+
+    /* INSCRITOS COLAPSABLES */
+    .inscrito-card{border:1px solid var(--borde);border-radius:8px;margin-bottom:6px;overflow:hidden;}
+    .inscrito-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;cursor:pointer;background:var(--blanco);transition:background 0.1s;}
+    .inscrito-header:hover{background:var(--gris-claro);}
+    .inscrito-nombre-h{font-weight:600;font-size:0.83rem;}
+    .inscrito-arrow{font-size:0.75rem;color:var(--gris);transition:transform 0.2s;}
+    .inscrito-arrow.open{transform:rotate(90deg);}
+    .inscrito-body{display:none;padding:10px 12px;background:#fafafa;border-top:1px solid var(--borde);font-size:0.78rem;}
+    .inscrito-body.open{display:block;}
+    .inscrito-dato{display:flex;gap:6px;margin-bottom:5px;align-items:flex-start;}
+    .inscrito-dato:last-child{margin-bottom:0;}
+    .inscrito-dato strong{min-width:80px;color:var(--negro);}
+    .inscrito-dato span{color:var(--gris);}
+    .inscrito-del-btn{margin-top:10px;width:100%;background:none;border:1px solid #fca5a5;color:var(--rojo);border-radius:6px;padding:6px;font-family:'DM Sans',sans-serif;font-size:0.75rem;cursor:pointer;font-weight:500;}
+    .inscrito-del-btn:hover{background:#fff7f7;}
+
+    /* ═══ CREAR ═══ */
+    .tabs-crear{display:flex;gap:3px;background:var(--gris-claro);border-radius:8px;padding:3px;margin-bottom:20px;}
+    .tab-crear{flex:1;padding:8px;border:none;background:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:500;cursor:pointer;color:var(--gris);transition:all 0.15s;}
+    .tab-crear.active{background:var(--blanco);color:var(--negro);box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+    .tab-crear-content{display:none;}
+    .tab-crear-content.active{display:block;}
+    .form-crear{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .fg{display:flex;flex-direction:column;gap:4px;}
+    .fg.full{grid-column:1/-1;}
+    .fg label{font-size:0.69rem;font-weight:600;color:var(--gris);text-transform:uppercase;letter-spacing:0.3px;}
+    .fg select,.fg input{border:1.5px solid var(--borde);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;background:white;}
+    .fg select:focus,.fg input:focus{border-color:var(--rojo);}
+    .time-range{display:flex;align-items:center;gap:8px;}
+    .time-range span{color:var(--gris);font-size:0.8rem;}
+    .btn-crear{background:var(--rojo);color:white;border:none;border-radius:8px;padding:11px 24px;font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:8px;}
+    .btn-crear:hover{background:var(--rojo-oscuro);}
+    .btn-crear:disabled{background:#ccc;cursor:not-allowed;}
+    .toast{display:none;align-items:center;gap:10px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46;border-radius:8px;padding:12px 16px;margin-top:14px;font-size:0.85rem;}
+    .toast.visible{display:flex;}
+    .toast.error{background:#fff0f0;border-color:#fca5a5;color:#7f1d1d;}
+
+    /* ═══ EDITAR CALENDARIO ═══ */
+    .edit-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .edit-cal-nav{display:flex;gap:5px;align-items:center;}
+    .edit-cal-nav button{background:var(--gris-claro);border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:0.9rem;}
+    .edit-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+    .ecg-nombre{text-align:center;font-size:0.65rem;font-weight:600;color:var(--gris);text-transform:uppercase;padding:6px 0;}
+    .ecg-dia{min-height:90px;border:1px solid var(--borde);border-radius:8px;padding:6px;background:var(--blanco);}
+    .ecg-dia.vacio,.ecg-dia.finde{background:#fafafa;border-color:#f0f0f0;}
+    .ecg-dia.hoy{border-color:var(--rojo);}
+    .ecg-dia-num{font-size:0.78rem;font-weight:600;color:var(--negro);margin-bottom:4px;}
+    .ecg-dia.finde .ecg-dia-num,.ecg-dia.vacio .ecg-dia-num{color:#ccc;}
+    .ecg-dia.hoy .ecg-dia-num{color:var(--rojo);}
+    .ecg-slot{background:#eff6ff;border-radius:4px;padding:3px 5px;margin-bottom:2px;font-size:0.62rem;cursor:pointer;border-left:2px solid var(--azul);transition:all 0.15s;}
+    .ecg-slot:hover{filter:brightness(0.93);}
+    .ecg-slot.lleno{background:#fee2e2;border-left-color:var(--rojo);}
+    .ecg-slot.bloqueado{background:#fef3c7;border-left-color:var(--amarillo);opacity:0.8;}
+    .ecg-slot.tiene-reservas{background:#e0e7ff;border-left-color:#4f46e5;}
+    .ecg-slot-hora{font-weight:700;color:#1e40af;display:block;}
+    .ecg-slot.lleno .ecg-slot-hora{color:var(--rojo);}
+    .ecg-slot.tiene-reservas .ecg-slot-hora{color:#312e81;}
+    .ecg-slot-cupos{color:#475569;}
+
+    .loading-sm{display:inline-block;width:12px;height:12px;border:2px solid #ddd;border-top-color:var(--rojo);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .empty-state{text-align:center;padding:24px;color:var(--gris);font-size:0.83rem;}
+  </style>
+</head>
+<body>
+
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="banda"></div>
+    <h2>Panel de Administración</h2>
+    <p>Ingresa la contraseña para continuar</p>
+    <input type="password" id="inp-pwd" placeholder="Contraseña" />
+    <div class="login-error" id="login-error">Contraseña incorrecta</div>
+    <button onclick="checkLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- PANEL LATERAL -->
+<div class="sdp" id="sdp">
+  <div class="sdp-header">
+    <h3 id="sdp-titulo">Detalle</h3>
+    <button class="sdp-close" onclick="cerrarSDP()">✕</button>
+  </div>
+  <div class="sdp-info" id="sdp-info"></div>
+
+  <div class="sdp-section">
+    <div class="sdp-section-title">Editar cupos disponibles</div>
+    <div class="edit-cupos-row">
+      <input type="number" id="sdp-cupos-input" min="0" max="30" />
+      <button onclick="guardarCupos()">Guardar</button>
+    </div>
+  </div>
+
+  <div class="sdp-section">
+    <button class="sdp-btn" id="sdp-btn-bloquear" onclick="toggleBloqueoSDP()">🔒 Bloquear horario</button>
+    <button class="sdp-btn danger" onclick="eliminarSDP()">🗑 Eliminar horario</button>
+  </div>
+
+  <div class="sdp-section">
+    <div class="sdp-section-title">Inscritos</div>
+    <div id="sdp-inscritos-lista"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo-banda-h"></div>
+  <div class="logo-texto-h">Scotia<span>bank</span> Admin</div>
+  <div class="header-badge">Panel de Capacitaciones</div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="goTab('vista')">📅 Vista semanal</button>
+  <button class="nav-tab" onclick="goTab('crear')">➕ Crear horarios</button>
+  <button class="nav-tab" onclick="goTab('editar')">✏️ Editar horarios</button>
+</nav>
+
+<!-- VISTA SEMANAL -->
+<div class="page active" id="page-vista">
+  <div class="card">
+    <div class="teams-toolbar">
+      <div class="teams-nav">
+        <button onclick="semPrev()">‹</button>
+        <button onclick="semNext()">›</button>
+      </div>
+      <h2 id="teams-titulo"></h2>
+      <button class="btn-sm" onclick="irHoy()">Hoy</button>
+      <button class="btn-sm" onclick="cargarVista()">↻</button>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#dbeafe;border-left:2px solid var(--azul)"></div>Disponible</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#c7d2fe;border-left:2px solid #4f46e5"></div>Con reservas</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;border-left:2px solid var(--rojo)"></div>Lleno</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;border-left:2px solid var(--amarillo)"></div>Bloqueado</div>
+    </div>
+    <div class="cal-wrapper" id="cal-wrapper"></div>
+  </div>
+</div>
+
+<!-- CREAR -->
+<div class="page" id="page-crear">
+  <div class="card">
+    <div class="card-title">Crear nuevos horarios</div>
+    <div class="tabs-crear">
+      <button class="tab-crear active" onclick="switchCrear('individual')">Individual</button>
+      <button class="tab-crear" onclick="switchCrear('rango')">Rango de fechas</button>
+    </div>
+    <div class="tab-crear-content active" id="tc-individual">
+      <div class="form-crear">
+        <div class="fg"><label>Fecha</label><input type="date" id="c-fecha"/></div>
+        <div class="fg"><label>Cupos</label><input type="number" id="c-cupos" value="6" min="1" max="30"/></div>
+        <div class="fg full">
+          <label>Horario (inicio — fin)</label>
+          <div class="time-range"><select id="c-hi"></select><span>→</span><select id="c-hf"></select></div>
+        </div>
+        <div class="fg full">
+          <button class="btn-crear" id="btn-ci" onclick="crearIndividual()">Crear horario</button>
+          <div class="toast" id="toast-i"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tab-crear-content" id="tc-rango">
+      <div class="form-crear">
+        <div class="fg"><label>Desde</label><input type="date" id="r-desde"/></div>
+        <div class="fg"><label>Hasta</label><input type="date" id="r-hasta"/></div>
+        <div class="fg"><label>Cupos</label><input type="number" id="r-cupos" value="6" min="1" max="30"/></div>
+        <div class="fg full">
+          <label>Horario (inicio — fin)</label>
+          <div class="time-range"><select id="r-hi"></select><span>→</span><select id="r-hf"></select></div>
+        </div>
+        <div class="fg full">
+          <button class="btn-crear" id="btn-cr" onclick="crearRango()">Crear horarios (L–V)</button>
+          <div class="toast" id="toast-r"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDITAR -->
+<div class="page" id="page-editar">
+  <div class="card">
+    <div class="edit-cal-header">
+      <div class="edit-cal-nav">
+        <button onclick="ecPrev()">‹</button>
+        <h3 id="ec-titulo" style="font-size:0.95rem;font-weight:600;min-width:160px;text-align:center;text-transform:capitalize"></h3>
+        <button onclick="ecNext()">›</button>
+      </div>
+      <button class="btn-sm" onclick="cargarEditar()">↻ Actualizar</button>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#eff6ff;border-left:2px solid var(--azul)"></div>Disponible</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#e0e7ff;border-left:2px solid #4f46e5"></div>Con reservas</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;border-left:2px solid var(--rojo)"></div>Lleno</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fef3c7;border-left:2px solid var(--amarillo)"></div>Bloqueado</div>
+    </div>
+    <div class="edit-cal-grid" id="ec-grid"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://evqznmyvhhtzmmvtoytm.supabase.co';
+const SUPABASE_KEY='sb_publishable_F7ZbldPprrVRH0wdBT20HA_pzCZ3Cgt';
+const ADMIN_PASS='Scotia2025';
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DIAS_C=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const HORA_INICIO=7, HORA_FIN=20, PX_POR_HORA=60;
+
+const api=(path,opts={})=>fetch(`${SUPABASE_URL}/rest/v1/${path}`,{
+  headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'return=representation',...opts.headers},...opts
+}).then(r=>r.json());
+
+function checkLogin(){
+  if(document.getElementById('inp-pwd').value===ADMIN_PASS){
+    document.getElementById('login-screen').style.display='none';
+    inicializar();
+  } else document.getElementById('login-error').style.display='block';
+}
+document.getElementById('inp-pwd').addEventListener('keydown',e=>{if(e.key==='Enter')checkLogin();});
+
+function goTab(tab){
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',['vista','crear','editar'][i]===tab));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  cerrarSDP();
+  if(tab==='vista') cargarVista();
+  if(tab==='editar') cargarEditar();
+}
+
+function buildTime(sel,def){
+  sel.innerHTML='';
+  for(let h=7;h<=20;h++)for(let m=0;m<60;m+=15){
+    const v=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    const o=document.createElement('option');o.value=v;o.textContent=v;
+    if(v===def)o.selected=true;sel.appendChild(o);
+  }
+}
+
+function switchCrear(tab){
+  document.querySelectorAll('.tab-crear').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='individual')||(i===1&&tab==='rango')));
+  document.getElementById('tc-individual').classList.toggle('active',tab==='individual');
+  document.getElementById('tc-rango').classList.toggle('active',tab==='rango');
+}
+
+function showToast(id,msg,err=false){
+  const t=document.getElementById(id);
+  t.textContent=(err?'❌ ':'✅ ')+msg;
+  t.className='toast visible'+(err?' error':'');
+  setTimeout(()=>t.classList.remove('visible'),4000);
+}
+
+async function crearIndividual(){
+  const fecha=document.getElementById('c-fecha').value;
+  const hi=document.getElementById('c-hi').value;
+  const hf=document.getElementById('c-hf').value;
+  const cupos=parseInt(document.getElementById('c-cupos').value);
+  if(!fecha||!hi){showToast('toast-i','Completa fecha y hora',true);return;}
+  const btn=document.getElementById('btn-ci');
+  btn.disabled=true;btn.innerHTML='<span class="loading-sm"></span> Creando...';
+  try{
+    await api('slots',{method:'POST',body:JSON.stringify({fecha,hora:hi,hora_fin:hf,cupos_total:cupos,cupos_disponibles:cupos})});
+    showToast('toast-i',`Horario ${hi}–${hf} creado`);
+    cargarVista(); cargarEditar();
+  }catch(e){showToast('toast-i','Error al crear',true);}
+  btn.disabled=false;btn.textContent='Crear horario';
+}
+
+async function crearRango(){
+  const desde=new Date(document.getElementById('r-desde').value+'T12:00:00');
+  const hasta=new Date(document.getElementById('r-hasta').value+'T12:00:00');
+  const hi=document.getElementById('r-hi').value;
+  const hf=document.getElementById('r-hf').value;
+  const cupos=parseInt(document.getElementById('r-cupos').value);
+  if(!hi||isNaN(desde)){showToast('toast-r','Completa todos los campos',true);return;}
+  const btn=document.getElementById('btn-cr');
+  btn.disabled=true;btn.innerHTML='<span class="loading-sm"></span> Creando...';
+  let creados=0,cur=new Date(desde);
+  try{
+    while(cur<=hasta){
+      if(cur.getDay()!==0&&cur.getDay()!==6){
+        await api('slots',{method:'POST',body:JSON.stringify({fecha:cur.toISOString().slice(0,10),hora:hi,hora_fin:hf,cupos_total:cupos,cupos_disponibles:cupos})});
+        creados++;
+      }
+      cur.setDate(cur.getDate()+1);
+    }
+    showToast('toast-r',`${creados} horarios creados`);
+    cargarVista(); cargarEditar();
+  }catch(e){showToast('toast-r','Error al crear',true);}
+  btn.disabled=false;btn.textContent='Crear horarios (L–V)';
+}
+
+// ═══ VISTA SEMANAL PROPORCIONAL ═══
+let semBase=new Date(), todosSlots=[];
+
+function getLunes(d){
+  const dia=new Date(d);dia.setHours(0,0,0,0);
+  const dow=dia.getDay();
+  dia.setDate(dia.getDate()+(dow===0?-6:1-dow));
+  return dia;
+}
+
+function horaAMinutos(h){
+  const [hh,mm]=h.slice(0,5).split(':').map(Number);
+  return hh*60+mm;
+}
+
+async function cargarVista(){
+  const data=await api('slots?order=fecha.asc,hora.asc&limit=300');
+  todosSlots=Array.isArray(data)?data:[];
+  renderSemanal();
+}
+
+function renderSemanal(){
+  const lunes=getLunes(semBase);
+  const dias=[];
+  for(let i=0;i<5;i++){const d=new Date(lunes);d.setDate(d.getDate()+i);dias.push(d);}
+  const fin=new Date(dias[4]);
+  document.getElementById('teams-titulo').textContent=
+    `${lunes.getDate()} ${MESES[lunes.getMonth()]} – ${fin.getDate()} ${MESES[fin.getMonth()]} ${fin.getFullYear()}`;
+
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const totalHoras=HORA_FIN-HORA_INICIO;
+  const wrapper=document.getElementById('cal-wrapper');
+  wrapper.innerHTML='';
+
+  // Columna de horas
+  const timeCol=document.createElement('div');
+  timeCol.className='time-col';
+  // spacer para header
+  const spacer=document.createElement('div');
+  spacer.className='time-cell';spacer.style.height='48px';
+  timeCol.appendChild(spacer);
+  for(let h=HORA_INICIO;h<HORA_FIN;h++){
+    const tc=document.createElement('div');tc.className='time-cell';
+    tc.textContent=`${String(h).padStart(2,'0')}:00`;
+    timeCol.appendChild(tc);
+  }
+  wrapper.appendChild(timeCol);
+
+  // Grid de días
+  const daysGrid=document.createElement('div');
+  daysGrid.className='days-grid';
+
+  // Headers
+  dias.forEach(d=>{
+    const esHoy=d.getTime()===hoy.getTime();
+    const h=document.createElement('div');
+    h.className='day-header'+(esHoy?' hoy-col':'');
+    h.innerHTML=`<div class="day-header-name">${DIAS_C[d.getDay()]}</div><div class="day-header-num${esHoy?' hoy-num':''}">${d.getDate()}</div>`;
+    daysGrid.appendChild(h);
+  });
+
+  // Columnas de días
+  dias.forEach(d=>{
+    const fStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const col=document.createElement('div');
+    col.className='day-col';
+    col.style.height=`${totalHoras*PX_POR_HORA}px`;
+    col.style.position='relative';
+
+    // Líneas de hora
+    for(let h=0;h<totalHoras;h++){
+      const line=document.createElement('div');
+      line.className='hour-line';
+      line.style.position='absolute';
+      line.style.top=`${h*PX_POR_HORA}px`;
+      line.style.left='0';line.style.right='0';
+      line.style.borderBottom='1px solid #f0f0f0';
+      col.appendChild(line);
+    }
+
+    // Slots del día
+    const daySlots=todosSlots.filter(s=>s.fecha===fStr);
+    daySlots.forEach(s=>{
+      const inicioMin=horaAMinutos(s.hora);
+      const finMin=s.hora_fin?horaAMinutos(s.hora_fin):inicioMin+60;
+      const duracionMin=finMin-inicioMin;
+      const topPx=((inicioMin-HORA_INICIO*60)/60)*PX_POR_HORA;
+      const heightPx=(duracionMin/60)*PX_POR_HORA-2;
+      const tieneReservas=s.cupos_disponibles<s.cupos_total&&!s.bloqueado&&s.cupos_disponibles>0;
+
+      const bloque=document.createElement('div');
+      bloque.className='slot-block'+(s.bloqueado?' bloqueado':s.cupos_disponibles===0?' lleno':tieneReservas?' tiene-reservas':'');
+      bloque.style.top=`${topPx}px`;
+      bloque.style.height=`${Math.max(heightPx,20)}px`;
+      const horario=s.hora_fin?`${s.hora.slice(0,5)}–${s.hora_fin.slice(0,5)}`:s.hora.slice(0,5);
+      bloque.innerHTML=`<span class="sb-hora">${horario}</span><span class="sb-info">${s.bloqueado?'Bloq':s.cupos_disponibles+'/'+s.cupos_total+' cupos'}</span>`;
+      bloque.onclick=()=>abrirSDP(s);
+      col.appendChild(bloque);
+    });
+
+    daysGrid.appendChild(col);
+  });
+
+  wrapper.appendChild(daysGrid);
+}
+
+function semPrev(){semBase.setDate(semBase.getDate()-7);renderSemanal();}
+function semNext(){semBase.setDate(semBase.getDate()+7);renderSemanal();}
+function irHoy(){semBase=new Date();renderSemanal();}
+
+// ═══ EDITAR CALENDARIO MENSUAL ═══
+let ecMes=new Date(),ecSlots=[];
+ecMes=new Date(ecMes.getFullYear(),ecMes.getMonth(),1);
+
+async function cargarEditar(){
+  const data=await api('slots?order=fecha.asc,hora.asc&limit=300');
+  ecSlots=Array.isArray(data)?data:[];
+  renderEC();
+}
+
+function renderEC(){
+  const grid=document.getElementById('ec-grid');
+  document.getElementById('ec-titulo').textContent=`${MESES[ecMes.getMonth()]} ${ecMes.getFullYear()}`;
+  grid.innerHTML='';
+  ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].forEach(n=>{
+    const el=document.createElement('div');el.className='ecg-nombre';el.textContent=n;grid.appendChild(el);
+  });
+  let offset=new Date(ecMes.getFullYear(),ecMes.getMonth(),1).getDay()-1;
+  if(offset<0)offset=6;
+  for(let i=0;i<offset;i++){const el=document.createElement('div');el.className='ecg-dia vacio';el.innerHTML='<div class="ecg-dia-num"></div>';grid.appendChild(el);}
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const dias=new Date(ecMes.getFullYear(),ecMes.getMonth()+1,0).getDate();
+  for(let d=1;d<=dias;d++){
+    const f=new Date(ecMes.getFullYear(),ecMes.getMonth(),d);
+    const fStr=`${f.getFullYear()}-${String(f.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const esFinde=f.getDay()===0||f.getDay()===6;
+    const esHoy=f.getTime()===hoy.getTime();
+    const el=document.createElement('div');
+    el.className='ecg-dia'+(esFinde?' finde':'')+(esHoy?' hoy':'');
+    el.innerHTML=`<div class="ecg-dia-num">${d}</div>`;
+    ecSlots.filter(s=>s.fecha===fStr).forEach(s=>{
+      const horario=s.hora_fin?`${s.hora.slice(0,5)}–${s.hora_fin.slice(0,5)}`:s.hora.slice(0,5);
+      const tieneReservas=s.cupos_disponibles<s.cupos_total&&!s.bloqueado&&s.cupos_disponibles>0;
+      const sp=document.createElement('div');
+      sp.className='ecg-slot'+(s.bloqueado?' bloqueado':s.cupos_disponibles===0?' lleno':tieneReservas?' tiene-reservas':'');
+      sp.innerHTML=`<span class="ecg-slot-hora">${horario}</span><span class="ecg-slot-cupos">${s.bloqueado?'Bloq':s.cupos_disponibles+'/'+s.cupos_total}</span>`;
+      sp.onclick=()=>abrirSDP(s);
+      el.appendChild(sp);
+    });
+    grid.appendChild(el);
+  }
+}
+
+function ecPrev(){ecMes.setMonth(ecMes.getMonth()-1);renderEC();}
+function ecNext(){ecMes.setMonth(ecMes.getMonth()+1);renderEC();}
+
+// ═══ PANEL LATERAL ═══
+let slotActivo=null;
+
+async function abrirSDP(slot){
+  slotActivo=slot;
+  const f=new Date(slot.fecha+'T12:00:00');
+  const horario=slot.hora_fin?`${slot.hora.slice(0,5)} – ${slot.hora_fin.slice(0,5)}`:slot.hora.slice(0,5);
+  document.getElementById('sdp-titulo').textContent=`${DIAS_C[f.getDay()]} ${f.getDate()} ${MESES[f.getMonth()].slice(0,3)}`;
+  document.getElementById('sdp-info').innerHTML=`
+    🕐 <strong>${horario} hrs</strong><br>
+    Cupos: <strong>${slot.cupos_disponibles}/${slot.cupos_total}</strong><br>
+    Estado: <strong>${slot.bloqueado?'Bloqueado':slot.cupos_disponibles===0?'Completo':'Activo'}</strong>
+  `;
+  document.getElementById('sdp-cupos-input').value=slot.cupos_disponibles;
+  document.getElementById('sdp-btn-bloquear').textContent=slot.bloqueado?'🔓 Desbloquear horario':'🔒 Bloquear horario';
+  document.getElementById('sdp').classList.add('visible');
+  cargarInscritos(slot.id);
+}
+
+function cerrarSDP(){document.getElementById('sdp').classList.remove('visible');slotActivo=null;}
+
+async function cargarInscritos(slotId){
+  const lista=document.getElementById('sdp-inscritos-lista');
+  lista.innerHTML='<div class="empty-state"><span class="loading-sm"></span></div>';
+  const data=await api(`reservas?slot_id=eq.${slotId}&order=created_at.asc`);
+  if(!Array.isArray(data)||!data.length){lista.innerHTML='<div class="empty-state">Sin inscritos aún.</div>';return;}
+  lista.innerHTML='';
+  data.forEach((r,i)=>{
+    const card=document.createElement('div');card.className='inscrito-card';
+    const header=document.createElement('div');header.className='inscrito-header';
+    header.innerHTML=`<span class="inscrito-nombre-h">${i+1}. ${r.nombre} ${r.apellido}</span><span class="inscrito-arrow" id="arr-${r.id}">›</span>`;
+    const body=document.createElement('div');body.className='inscrito-body';body.id=`body-${r.id}`;
+
+    const campos=[
+      ['👤 Nombre',`${r.nombre} ${r.apellido}`],
+      ['📧 Correo',r.correo],
+      ['🏢 Empresa',r.empresa||'—'],
+      ['🔢 RUC',r.ruc||'—'],
+      ['📬 Correos adicionales',r.correos_extra||'—'],
+    ];
+    campos.forEach(([label,valor])=>{
+      const d=document.createElement('div');d.className='inscrito-dato';
+      d.innerHTML=`<strong>${label}:</strong><span>${valor}</span>`;
+      body.appendChild(d);
+    });
+    const delBtn=document.createElement('button');delBtn.className='inscrito-del-btn';
+    delBtn.textContent='✕ Eliminar inscrito';
+    delBtn.onclick=()=>eliminarInscrito(r.id,slotId);
+    body.appendChild(delBtn);
+
+    header.onclick=()=>{
+      const isOpen=body.classList.contains('open');
+      body.classList.toggle('open',!isOpen);
+      document.getElementById(`arr-${r.id}`).classList.toggle('open',!isOpen);
+    };
+
+    card.appendChild(header);card.appendChild(body);
+    lista.appendChild(card);
+  });
+}
+
+async function eliminarInscrito(reservaId,slotId){
+  if(!confirm('¿Eliminar este inscrito?'))return;
+  await api(`reservas?id=eq.${reservaId}`,{method:'DELETE'});
+  const sd=await api(`slots?id=eq.${slotId}`);
+  if(Array.isArray(sd)&&sd[0]) await api(`slots?id=eq.${slotId}`,{method:'PATCH',body:JSON.stringify({cupos_disponibles:sd[0].cupos_disponibles+1})});
+  cargarInscritos(slotId);
+  cargarVista();cargarEditar();
+}
+
+async function guardarCupos(){
+  if(!slotActivo)return;
+  const n=parseInt(document.getElementById('sdp-cupos-input').value);
+  if(isNaN(n)||n<0){alert('Valor inválido');return;}
+  await api(`slots?id=eq.${slotActivo.id}`,{method:'PATCH',body:JSON.stringify({cupos_disponibles:n})});
+  slotActivo.cupos_disponibles=n;
+  cargarVista();cargarEditar();
+  alert('✅ Cupos actualizados');
+}
+
+async function toggleBloqueoSDP(){
+  if(!slotActivo)return;
+  await api(`slots?id=eq.${slotActivo.id}`,{method:'PATCH',body:JSON.stringify({bloqueado:!slotActivo.bloqueado})});
+  cerrarSDP();cargarVista();cargarEditar();
+}
+
+async function eliminarSDP(){
+  if(!slotActivo)return;
+  if(!confirm('¿Eliminar este horario y todas sus reservas?'))return;
+  await api(`slots?id=eq.${slotActivo.id}`,{method:'DELETE'});
+  cerrarSDP();cargarVista();cargarEditar();
+}
+
+function inicializar(){
+  buildTime(document.getElementById('c-hi'),'09:00');
+  buildTime(document.getElementById('c-hf'),'10:30');
+  buildTime(document.getElementById('r-hi'),'09:00');
+  buildTime(document.getElementById('r-hf'),'10:30');
+  cargarVista();
+}
+</script>
+</body>
+</html>
